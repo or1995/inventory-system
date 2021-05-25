@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<style>
+    .modal {
+        display: flex;
+        position: absolute;
+        left: 0;
+        top: 10rem;
+    }
+
+    .drawingBuffer {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+    }
+</style>
+<body>
+    <nav>
+        <a href="/">items</a>
+        <a href="/add">add item</a>
+        <a href="/reader">finditem</a>
+    </nav>
+    <form method="POST" action="/additem">
+        {% csrf_token %}
+        <label>name</label>
+        <input type="text" name="name" required>
+        <label>price</label>
+        <input type="number" name="price" required>
+        <label>amount</label>
+        <input type="number" name="amount" required>
+        <input  id="scanner_input2" type="number" style="display: none;" name="code" required>
+        <h1 id="codeinfo">code not registered</h1>
+        <button type="submit">add Item</button>
+    </form>
+
+    <div class="modal" id="livestream_scanner">
+        <div class="modal-dialog">
+            <div class="modal-header">
+                <h4>Barcode Scanner</h4>
+            </div>
+            <div class="modal-body">
+                <div id="interactive" class="viewport"></div>
+            </div>
+        </div><!-- /.modal-dialog -->
+    </div><!-- /.modal -->
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
+    <script type="text/javascript">
+        // Create the QuaggaJS config object for the live stream
+        var liveStreamConfig = {
+                inputStream: {
+                    type : "LiveStream",
+                    constraints: {
+                        width: {min: 640},
+                        height: {min: 480},
+                        aspectRatio: {min: 1, max: 100},
+                        facingMode: "environment" // or "user" for the front camera
+                    }
+                },
+                locator: {
+                        patchSize: "medium",
+                        halfSample: false
+                    },
+                    numOfWorkers: (navigator.hardwareConcurrency ? navigator.hardwareConcurrency : 4),
+                    decoder: {
+                        "readers":[
+                            {"format":"ean_reader","config":{}}
+                        ]
+                    },
+                locate: true
+            };
+        Quagga.init(
+            liveStreamConfig, 
+            function(err) {
+                if (err) {
+                    Quagga.stop();
+                    return;
+                }
+                Quagga.start();
+            }
+        );
+        
+        // draws
+        Quagga.onProcessed(function(result) {
+            var drawingCtx = Quagga.canvas.ctx.overlay,
+                drawingCanvas = Quagga.canvas.dom.overlay;
+     
+            if (result) {
+                if (result.boxes) {
+                    drawingCtx.clearRect(0, 0, parseInt(drawingCanvas.getAttribute("width")), parseInt(drawingCanvas.getAttribute("height")));
+                    result.boxes.filter(function (box) {
+                        return box !== result.box;
+                    }).forEach(function (box) {
+                        Quagga.ImageDebug.drawPath(box, {x: 0, y: 1}, drawingCtx, {color: "green", lineWidth: 2});
+                    });
+                }
+     
+                if (result.box) {
+                    Quagga.ImageDebug.drawPath(result.box, {x: 0, y: 1}, drawingCtx, {color: "#00F", lineWidth: 2});
+                }
+     
+                if (result.codeResult && result.codeResult.code) {
+                    Quagga.ImageDebug.drawPath(result.line, {x: 'x', y: 'y'}, drawingCtx, {color: 'red', lineWidth: 3});
+                }
+            }
+        });
+        
+        // Once a barcode had been read successfully, stop quagga and 
+        // close the modal after a second to let the user notice where 
+        // the barcode had actually been found.
+        Quagga.onDetected(function(result) {    		
+            if (result.codeResult.code){
+                document.getElementById('scanner_input2').value = result.codeResult.code;
+                document.getElementById('codeinfo').textContent = `Code is ${result.codeResult.code}`;
+                Quagga.stop();				
+            }
+        });
+    </script>
+</body>
+</html>

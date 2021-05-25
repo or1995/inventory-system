@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<style>
+    .item {
+        background-color:darkslateblue;
+        color: floralwhite;
+        padding: 1rem;
+        box-sizing: border-box;
+        margin-bottom: 1rem;
+    }
+</style>
+<body>
+    <nav>
+        <a href="/">items</a>
+        <a href="/add">add item</a>
+        <a href="/reader">finditem</a>
+    </nav>
+    {% for item in items %}
+    <div class="item">
+        <h1>ITEM: {{item.name}} x {{item.amount}}</h1>
+        <h2>PRICE: {{item.price}} LE</h2>
+        <h3>CODE: {{item.code}}</h3>
+    </div>
+    {% endfor %}
+</body>
+</html>
